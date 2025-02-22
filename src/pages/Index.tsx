@@ -1,6 +1,7 @@
 
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
+import Products from "@/components/Products";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 
@@ -18,6 +19,7 @@ const Index = () => {
     <main className="min-h-screen">
       <Navbar />
       <Hero />
+      <Products />
     </main>
   );
 };
