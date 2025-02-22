@@ -88,7 +88,8 @@ const Products = () => {
               Roche de qualité et savoir-faire sont le reflet de notre professionnalisme. Partout en RDC, la CILU a toujours su offrir un ciment de bonne qualité pour construire aussi bien des petites maisons que de prestigieux monuments.
             </p>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            {/* Ciments Portland Card */}
+            <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <img 
                   src="/lovable-uploads/23d9a48d-d6fe-42d2-ab58-0eb14cbb9df2.png"
@@ -99,6 +100,40 @@ const Products = () => {
                   <h3 className="text-xl font-bold mb-3">Ciments Portland</h3>
                   <p className="text-gray-600">
                     Les ciments Portland sont des liants hydrauliques composés principalement de silicates de calcium hydrauliques qui font prises et durcissent en vertu d'une réaction chimique à l'eau appelée hydratation. Lorsqu'on ajoute la pâte (ciment, air et eau) aux granulats (sable et gravier, pierre concassée ou autre matériau granulaire), elle agit...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Calcilu Agro Card */}
+            <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <img 
+                  src="/lovable-uploads/995bd9ec-233a-49c0-939c-999632b62ee9.png"
+                  alt="Calcilu Agro" 
+                  className="w-32 h-auto"
+                />
+                <div>
+                  <h3 className="text-xl font-bold mb-3">Calcilu Agro</h3>
+                  <p className="text-gray-600">
+                    Issus des carrières de la CILU à Lukala, les calcaires sont des roches sédimentaires, tout comme les grès ou les gypses, facilement solubles dans l'eau et composés majoritairement de carbonate de calcium CaCO3 ainsi que de carbonate de magnésium MgCO3. La Calcilu se décline en...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Calcilu Card */}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <img 
+                  src="/lovable-uploads/995bd9ec-233a-49c0-939c-999632b62ee9.png"
+                  alt="Calcilu" 
+                  className="w-32 h-auto"
+                />
+                <div>
+                  <h3 className="text-xl font-bold mb-3">Calcilu</h3>
+                  <p className="text-gray-600">
+                    Issus des carrières de la CILU à Lukala, les calcaires sont des roches sédimentaires, tout comme les grès ou les gypses, facilement solubles dans l'eau et composés majoritairement de carbonate de calcium CaCO3 ainsi que de carbonate de magnésium MgCO3. La Calcilu se décline en...
                   </p>
                 </div>
               </div>
