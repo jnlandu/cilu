@@ -25,39 +25,75 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { Eye, EyeOff } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-const loginSchema = z.object({
+const signupSchema = z.object({
+  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
 })
 
-type LoginValues = z.infer<typeof loginSchema>
+type SignupValues = z.infer<typeof signupSchema>
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  
 
-  const form = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   })
 
-  async function onSubmit(data: LoginValues) {
+  async function onSubmit(data: SignupValues) {
     setIsLoading(true)
     try {
-      // Add your login API call here
-      console.log(data)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast.success("Connexion réussie")
-      router.push("/dashboard")
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
+      })
+
+      if (response.ok) {
+        const { user } = await response.json()
+        toast({
+          variant: "default",
+          description: "Inscription réussie!"
+        })
+        router.push("/auth/login/")
+      } else {
+        const error = await response.json()
+        toast({
+          variant: "destructive",
+          description: error.message || "Une erreur est survenue"
+        })
+        // toast.error(error.message || "Une erreur est survenue")
+      }
     } catch (error) {
-      toast.error("Email ou mot de passe incorrect")
+      toast({
+        variant: "destructive",
+        description: "Une erreur est survenue"
+      })
+      // toast.error("Une erreur est survenue")
     } finally {
       setIsLoading(false)
     }
@@ -74,14 +110,31 @@ export default function LoginPage() {
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Connexion</CardTitle>
+            <CardTitle className="text-2xl text-center">Inscription</CardTitle>
             <CardDescription className="text-center">
-              Entrez vos identifiants pour accéder à votre compte
+              Créez votre compte pour commander des produits
             </CardDescription>
           </CardHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Mayala Francis"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="email"
@@ -92,7 +145,7 @@ export default function LoginPage() {
                         <Input
                           {...field}
                           type="email"
-                          placeholder="m@example.com"
+                          placeholder="mayala@example.com"
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -107,11 +160,58 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Mot de passe</FormLabel>
                       <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          disabled={isLoading}
-                        />
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            disabled={isLoading}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmer le mot de passe</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? "text" : "password"}
+                            disabled={isLoading}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -124,24 +224,16 @@ export default function LoginPage() {
                   type="submit"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Connexion en cours..." : "Se connecter"}
+                  {isLoading ? "Inscription en cours..." : "S'inscrire"}
                 </Button>
-                <div className="flex flex-col gap-2 text-center text-sm">
+                <div className="text-center text-sm text-muted-foreground">
+                  Déjà un compte?{" "}
                   <Link 
-                    href="/auth/forgot-password"
+                    href="/auth/login"
                     className="text-blue-600 hover:text-blue-800"
                   >
-                    Mot de passe oublié?
+                    Se connecter
                   </Link>
-                  <div className="text-muted-foreground">
-                    Pas encore de compte?{" "}
-                    <Link 
-                      href="/auth/register"
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      S'inscrire
-                    </Link>
-                  </div>
                 </div>
               </CardFooter>
             </form>
