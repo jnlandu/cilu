@@ -17,7 +17,7 @@ export function Header() {
           <Link href="#contact" className="text-sm font-medium text-gray-500 hover:text-gray-900">
             Contact
           </Link>
-          <Link href="/login" className="text-sm font-medium text-gray-500 hover:text-gray-900">
+          <Link href="/auth/login" className="text-sm font-medium text-gray-500 hover:text-gray-900">
             Se connecter
           </Link>
         </nav>
