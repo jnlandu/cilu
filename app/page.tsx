@@ -3,63 +3,17 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import { OrderDialog } from "@/components/order-dialog"
+import { Header } from "@/components/header"
+import { HeroSection } from "@/components/hero"
 // import { OrderDialog } from "@/components/order-dialog"
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col p-8">
-      <header className="border-b">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold">CiluMarket</span>
-          </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-sm font-medium text-blue-600">
-              Accueil
-            </Link>
-            <Link href="#produits" className="text-sm font-medium text-gray-500 hover:text-gray-900">
-              Produits
-            </Link>
-            <Link href="#contact" className="text-sm font-medium text-gray-500 hover:text-gray-900">
-              Contact
-            </Link>
-            <Link href="/login" className="text-sm font-medium text-gray-500 hover:text-gray-900">
-              Se connecter
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
       <main className="flex-1">
-        <section className="py-12 md:py-24">
-          <div className="container grid gap-8 md:grid-cols-2 items-center">
-            <div className="space-y-6">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-                Bienvenue sur la plateforme Cilution
-              </h1>
-              <p className="text-gray-500 md:text-xl">
-                Passez vos commandes en ligne, elles seront prise en charge par des distributeurs.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                 <OrderDialog productName="CEM II/B-LL 42,5 R" />
-                <Button size="lg" variant="outline" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Télécharger l'application Andoid
-                </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <Image
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/cilu-test.jpg-QG0nT39wvEZxvvEyRM960Pg3DHpmU7.jpeg"
-                alt="CILU Logo"
-                width={500}
-                height={500}
-                className="mx-auto"
-                priority
-              />
-              <h2 className="text-3xl font-bold text-center text-blue-900 mt-4">MABELE YA MBOKA</h2>
-            </div>
-          </div>
-        </section>
+        <HeroSection />
+        {/* About Section */}
         <section className="py-12 md:py-24 bg-gray-50">
           <div className="container space-y-12">
             <div className="text-center space-y-4">

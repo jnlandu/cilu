@@ -1,3 +1,7 @@
+'use client'
+
+import { useState } from "react"
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,12 +14,22 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { CONGO_SITES } from "@/data/sites"
 
 interface OrderDialogProps {
   productName: string
 }
 
 export function OrderDialog({ productName }: OrderDialogProps) {
+  const [site, setSite] = useState<string>("")
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -47,11 +61,18 @@ export function OrderDialog({ productName }: OrderDialogProps) {
             <Label htmlFor="location" className="text-right">
               Lieu
             </Label>
-            <Input
-              id="location"
-              className="col-span-3"
-              placeholder="Adresse de livraison"
-            />
+            <Select onValueChange={setSite} value={site}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Sélectionnez une ville" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONGO_SITES.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>
