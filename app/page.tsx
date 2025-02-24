@@ -2,6 +2,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
+import { OrderDialog } from "@/components/order-dialog"
+// import { OrderDialog } from "@/components/order-dialog"
 
 export default function Home() {
   return (
@@ -38,9 +40,7 @@ export default function Home() {
                 Passez vos commandes en ligne, elles seront prise en charge par des distributeurs.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                  Commander
-                </Button>
+                 <OrderDialog productName="CEM II/B-LL 42,5 R" />
                 <Button size="lg" variant="outline" className="gap-2">
                   <Download className="h-4 w-4" />
                   Télécharger l'application Andoid
@@ -91,9 +91,7 @@ export default function Home() {
                     pour la fabrication des blocs
                   </li>
                 </ul>
-                <Button size="lg" className="mt-4">
-                  Commander
-                </Button>
+                <OrderDialog productName="CEM II/B-LL 42,5 R" />
               </div>
             </div>
 
@@ -108,9 +106,7 @@ export default function Home() {
                     • Ciment a prise rapide avec une excellente ouvrabilite et une facilite de mise en oeuvre des betons
                   </li>
                 </ul>
-                <Button size="lg" className="mt-4">
-                  Commander
-                </Button>
+                <OrderDialog productName="CEM II/B-LL 32,5 R" />
               </div>
               <div className="order-1 md:order-2">
                 <Image
