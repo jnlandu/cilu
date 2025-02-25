@@ -15,8 +15,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { verifyUser } from "@/utils/cvs-auth"
 import { Eye, EyeOff } from "lucide-react"
+
+
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const ROLES = [
+  { id: 'admin', label: 'Administrateur' },
+  { id: 'user', label: 'Utilisateur' }
+] as const
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,7 +39,8 @@ export default function LoginPage() {
   const { toast } = useToast()
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    role: "user", // Add default role
   })
 
   async function onSubmit(event: React.FormEvent) {
@@ -47,12 +62,17 @@ export default function LoginPage() {
           variant: "default",
           description: "Connexion réussie!"
         })
-        router.push(`/dashboard/users/${user.id}`)
+        // Route based on role
+        if (user.role === 'admin') {
+          router.push(`/dashboard/admin/${user.id}`)
+        } else {
+          router.push(`/dashboard/users/${user.id}`)
+        }
       } else {
         const error = await response.json()
         toast({
           variant: "destructive",
-          description: `${error.error} || "Email ou mot de passe incorrect"`
+          description: error.error || "Email ou mot de passe incorrect"
         })
       }
     } catch (error) {
@@ -69,6 +89,13 @@ export default function LoginPage() {
     setFormData(prev => ({
       ...prev,
       [e.target.id]: e.target.value
+    }))
+  }
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value
     }))
   }
 
@@ -102,6 +129,24 @@ export default function LoginPage() {
                 />
               </div>
               <div className="grid gap-2">
+              <Label htmlFor="role">Rôle</Label>
+              <Select
+                value={formData.role}
+                onValueChange={handleRoleChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner votre rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+              <div className="grid gap-2">
                 <Label htmlFor="password">Mot de passe</Label>
                 <div className="relative">
                   <Input
@@ -131,7 +176,7 @@ export default function LoginPage() {
               <Button 
                 className="w-full" 
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !formData.email || !formData.password || !formData.role}
               >
                 {isLoading ? "Connexion..." : "Se connecter"}
               </Button>

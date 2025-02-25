@@ -31,6 +31,9 @@ import { useToast } from "@/hooks/use-toast"
 const signupSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
+  role: z.enum(["user", "admin"], {
+    required_error: "Veuillez sélectionner un rôle",
+  }),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
