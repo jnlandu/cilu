@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CreditCard, Smartphone } from "lucide-react"
 import { PRODUCTS } from "@/data/sites"
+import axios from "axios"
 
 
 
@@ -52,6 +53,33 @@ export default function PaymentPage({ params }: PaymentPageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'mobile' | null>(null)
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null)
+  const [formData, setFormData] = useState({
+    orderNumber: '',
+    phone: ''
+  })
+  const isValidPhone = (phone: string) => {
+    return /^243[0-9]{9}$/.test(phone)
+  }
+
+  const extractReferenceNumber = (orderNumber: string) => {
+    const phoneStartIndex = orderNumber.indexOf('243')
+    
+    if (phoneStartIndex === -1) {
+      return {
+        reference: orderNumber,
+        phoneNumber: ''
+      }
+    }
+
+  
+    const reference = orderNumber.substring(0, phoneStartIndex)
+    const phoneNumber = orderNumber.substring(phoneStartIndex)
+  
+    return {
+      reference,
+      phoneNumber
+    }
+  }
 
   useEffect(() => {
     const orderData = sessionStorage.getItem('pendingOrder')
@@ -64,54 +92,171 @@ export default function PaymentPage({ params }: PaymentPageProps) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setIsLoading(true)
-
-    try {
-      const response = await fetch(`/api/users/${params.id}/payments/${params.orderId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...pendingOrder,
-          paymentMethod,
-          accountDetails: paymentDetails[paymentMethod as keyof PaymentDetails],
-          userId: params.id,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to process payment')
-      }
-
-      sessionStorage.removeItem('pendingOrder')
-      toast({
-        title: "Paiement réussi",
-        description: "Votre commande a été confirmée"
-      })
-      router.push(`/dashboard/users/${params.id}`)
-    } catch (error) {
+    if (!isValidPhone(formData.phone)) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Le paiement a échoué"
+        description: "Numéro de téléphone invalide"
       })
+      return
+    }
+    setIsLoading(true)
+  
+    try {
+      const data = {
+        Numero: formData.phone,
+        Montant:  pendingOrder?.amount,
+        currency: 'CDF',
+        description: 'Paiement de publication',
+      }
+      const gateway = `${process.env.NEXT_PUBLIC_FASTAPI_URL}/payment`
+      const headers = {
+        'Content-Type': 'application/json',
+        "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJcL2xvZ2luIiwicm9sZXMiOlsiTUVSQ0hBTlQiXSwiZXhwIjoxNzc5OTcwMTc1LCJzdWIiOiJlNzFiM2I4ZDMyNGFmYTMwOWU0NzY4MGI1ZjE0NDhhNCJ9.cLawA7kXCwBNYADRdwy9BJKwxQJOjUf0nTQ1i2Wipnw",
+        'Access-Control-Allow-Origin': '*'
+      } 
+      // Call the backend API directly
+      const response = await axios.post(gateway, data, { headers, timeout: 60000 })
+      const responseData = response.data
+      const orderNumber = responseData.orderNumber
+      
+      if (!orderNumber) {
+        throw new Error('Payment processing failed')
+      }
+    const { reference, phoneNumber } = extractReferenceNumber(orderNumber)
+    await checkPayment(reference, phoneNumber, orderNumber)
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Le paiement a échoué"
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   if (!pendingOrder) return null
 
-  const isFormValid = () => {
-    if (paymentMethod === 'bank') {
-      return paymentDetails.bank?.accountNumber && paymentDetails.bank?.bankName;
+
+const checkPayment = async (reference: string, phoneNumber: string, orderNumber: string) => {
+
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const pollStatus = async () => {
+        if (attempts >= maxAttempts) {
+          toast({
+            variant: "destructive",
+            title: "Délai dépassé",
+            description: "La confirmation du paiement a pris trop de temps"
+          });
+          return;
+        }
+
+        try{
+          const gateway = `${process.env.NEXT_PUBLIC_FASTAPI_URL}/check-payment/${orderNumber}`;
+          const response = await axios.get(gateway );
+          const { verification, message } = response.data;
+
+          console.log("Debugging verification: ", verification, message)
+
+          switch (verification) {
+            case '0':
+              await updatePaymentStatus(reference, phoneNumber, true);
+              toast({
+                title: "Succès",
+                description: message || "Paiement confirmé!",
+                duration: 5000
+              });
+
+              sessionStorage.removeItem('pendingOrder')
+              router.push(`/dashboard/users/${params.id}`)
+
+              break;
+              case '1':
+                updatePaymentStatus(reference, phoneNumber, false);
+                toast({
+                  variant: "destructive",
+                  title: "Erreur",
+                  description: message || "Le paiement a échoué",
+                  duration: 5000
+                });
+                break;
+
+            case '2':
+               attempts++;
+                toast({
+                  title: "En attente",
+                  description: "Votre paiement est en cours de traitement",
+                });
+                 // Wait 3 seconds before trying again
+                setTimeout(pollStatus, 3000);
+               
+              break;
+            default:
+              throw new Error('Invalid verification status');
+          }
+        }catch(error){
+          attempts++;
+          if (attempts >= maxAttempts) {
+            toast({
+              variant: "destructive",
+              title: "Délai dépassé",
+              description: "La confirmation du paiement a pris trop de temps"
+            });
+            return;
+          }
+        }
     }
-    if (paymentMethod === 'mobile') {
-      return paymentDetails.mobile?.phoneNumber && paymentDetails.mobile?.operator;
+    await pollStatus();
+}
+
+const updatePaymentStatus = async (reference: string, phoneNumber: string, status: boolean) => {
+  try {
+    const response = await fetch(`/api/users/${params.id}/payments/${params.orderId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...pendingOrder,
+        paymentMethod,
+        accountDetails: paymentDetails[paymentMethod as keyof PaymentDetails],
+        userId: params.id,
+        reference: reference,
+        orderNumber: phoneNumber,
+        status: status ? 'payé' : 'échec'
+      }),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to process payment')
     }
-    return false;
-  };
+
+    if ( status){
+      toast({
+        title: "Succès",
+        description: "Paiement confirmé"
+      })
+    }else{
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le paiement a échoué"
+    })
+    }
+  } catch (error) {
+    toast({
+      variant: "destructive",
+      title: "Erreur",
+      description: "Le paiement a échoué"
+    })
+  } finally {
+    setIsLoading(false)
+  }
+}
+
 
   return (
     <div className="container max-w-2xl mx-auto px-4 py-8">
@@ -167,6 +312,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
                 <div>
                   <Label>Numéro de compte</Label>
                   <Input 
+                    type="telephone"
                     placeholder="Entrer votre numéro de compte"
                     onChange={(e) => setPaymentDetails(prev => ({
                       ...prev,
@@ -204,14 +350,25 @@ export default function PaymentPage({ params }: PaymentPageProps) {
                 <div>
                   <Label>Numéro de téléphone</Label>
                   <Input 
-                    placeholder="Ex: +243 XX XXX XXXX"
-                    onChange={(e) => setPaymentDetails(prev => ({
-                      ...prev,
-                      mobile: {
-                        phoneNumber: e.target.value,
-                        operator: prev.mobile?.operator || ''
+                    placeholder="Ex: 243 XX XXX XXXX"
+                    value={formData.phone}
+                    onChange={(e: any) => {
+                      const input = e.target.value
+                      const cleaned = input.replace(/\D/g, '')
+                      if (cleaned.length <= 12 && (cleaned.startsWith('243') || cleaned.length <= 3)) {
+                        setFormData(prev => ({
+                          ...prev,
+                          phone: cleaned
+                        }))
                       }
-                    }))}
+                      setPaymentDetails(prev => ({
+                        ...prev,      
+                        mobile: {
+                          phoneNumber: cleaned,
+                          operator: prev.mobile?.operator || ''
+                        }
+                      }))
+                    }}
                   />
                 </div>
                 <div>
@@ -239,7 +396,7 @@ export default function PaymentPage({ params }: PaymentPageProps) {
             <Button 
               type="submit" 
               className="w-full"
-              disabled={isLoading || !paymentMethod || !isFormValid()}
+              disabled={isLoading || !paymentMethod }
             >
               {isLoading ? "Traitement..." : "Confirmer le paiement"}
             </Button>

@@ -40,22 +40,31 @@ export async function POST(
   try {
     const body = await request.json()
 
-    // Ensure payments CSV exists
+    // Ensure payments CSV exists with ALL necessary columns
     try {
       await fs.access(PAYMENTS_CSV_PATH)
     } catch {
       await fs.writeFile(
         PAYMENTS_CSV_PATH,
-        'id,orderId,userId,amount,paymentMethod,accountDetails,status,createdAt\n'
+        'id,orderId,userId,amount,paymentMethod,accountDetails,status,createdAt,reference,orderNumber\n'
       )
     }
 
     // Read existing payments
     const fileContent = await fs.readFile(PAYMENTS_CSV_PATH, 'utf-8')
-    const payments = parse(fileContent, {
-      columns: true,
-      skip_empty_lines: true
-    })
+    let payments = []
+    
+    try {
+      payments = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        relax_column_count: true // Add this to be more tolerant of column mismatches
+      })
+    } catch (error) {
+      console.error('Error parsing CSV file:', error)
+      // If parsing fails, start with empty payments array
+      payments = []
+    }
 
     const payment = {
       id: params.orderId,
@@ -64,34 +73,56 @@ export async function POST(
       amount: body.amount,
       paymentMethod: body.paymentMethod,
       accountDetails: JSON.stringify(body.accountDetails),
-      status: 'pending',
-      createdAt: new Date().toISOString()
+      status: body.status,
+      createdAt: new Date().toISOString(),
+      reference: body.reference || '',  // Ensure these fields are never undefined
+      orderNumber: body.orderNumber || ''
     }
 
-    payments.push(payment)
+    // Check if payment already exists and update it, or add new one
+    const existingIndex = payments.findIndex((p: any) => p.orderId === params.orderId)
+    if (existingIndex >= 0) {
+      payments[existingIndex] = payment
+    } else {
+      payments.push(payment)
+    }
 
-    // Write updated payments to CSV
-    const csv = stringify(payments, { header: true })
+    // Write updated payments to CSV with explicitly defined columns to ensure consistency
+    const columns = [
+      'id', 'orderId', 'userId', 'amount', 'paymentMethod', 
+      'accountDetails', 'status', 'createdAt', 'reference', 'orderNumber'
+    ]
+    
+    const csv = stringify(payments, { 
+      header: true,
+      columns: columns
+    })
+    
     await fs.writeFile(PAYMENTS_CSV_PATH, csv)
 
     // Update order status
-    const ordersContent = await fs.readFile(ORDERS_CSV_PATH, 'utf-8')
-    const orders = parse(ordersContent, {
-      columns: true,
-      skip_empty_lines: true
-    })
+    try {
+      const ordersContent = await fs.readFile(ORDERS_CSV_PATH, 'utf-8')
+      const orders = parse(ordersContent, {
+        columns: true,
+        skip_empty_lines: true
+      })
 
-    const updatedOrders = orders.map((order: any) => {
-      if (order.id === params.orderId) {
-        return { ...order, status: 'processing' }
-      }
-      return order
-    })
+      const updatedOrders = orders.map((order: any) => {
+        if (order.id === params.orderId) {
+          return { ...order, status: body.status === 'payé' ? 'processing' : 'pending' }
+        }
+        return order
+      })
 
-    await fs.writeFile(
-      ORDERS_CSV_PATH,
-      stringify(updatedOrders, { header: true })
-    )
+      await fs.writeFile(
+        ORDERS_CSV_PATH,
+        stringify(updatedOrders, { header: true })
+      )
+    } catch (orderError) {
+      console.error('Error updating order status:', orderError)
+      // Continue execution even if order update fails
+    }
 
     return NextResponse.json({ payment })
   } catch (error) {

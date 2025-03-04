@@ -1,1 +1,4 @@
-id,orderId,userId,amount,paymentMethod,accountDetails,status,createdAt
+id,orderId,userId,amount,paymentMethod,accountDetails,status,createdAt,reference,orderNumber
+671b7673-41a8-406e-ba21-f740ec68925b,671b7673-41a8-406e-ba21-f740ec68925b,f97c02cb-8927-4c7b-905d-437d6af7ecf4,2400000,mobile,"{""phoneNumber"":""243814708965"",""operator"":""mpesa""}",pending,2025-03-03T17:32:26.041Z,,
+aa0ae1fe-8e25-49ef-9d05-a1bbc9426925,aa0ae1fe-8e25-49ef-9d05-a1bbc9426925,f97c02cb-8927-4c7b-905d-437d6af7ecf4,300000,mobile,"{""phoneNumber"":""243986584866"",""operator"":""airtel""}",échec,2025-03-03T21:31:06.346Z,JT1g31JetWGw,243986584866
+28bb8481-8169-45ef-8e81-bc5f1ffc0283,28bb8481-8169-45ef-8e81-bc5f1ffc0283,f97c02cb-8927-4c7b-905d-437d6af7ecf4,300000,mobile,"{""phoneNumber"":""243817109686"",""operator"":""mpesa""}",échec,2025-03-03T22:56:49.616Z,OSDdmkku8e9J,243817109686

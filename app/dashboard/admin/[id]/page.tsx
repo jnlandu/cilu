@@ -85,6 +85,7 @@ export default function AdminDashboard({ params }: { params: { id: string } }) {
         setAdmin(adminData)
         setStats(stats)
         setRecentOrders(orders)
+        
       } catch (error) {
         toast({
           variant: "destructive",
@@ -116,7 +117,6 @@ export default function AdminDashboard({ params }: { params: { id: string } }) {
           order.id === orderId ? { ...order, status: newStatus } : order
         )
       )
-
       toast({
         title: "Succès",
         description: "Statut de la commande mis à jour"
