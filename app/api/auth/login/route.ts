@@ -5,37 +5,62 @@ import path from 'path'
 import bcrypt from 'bcryptjs'
 import { NextResponse } from 'next/server'
 
-interface User {
-  email: string;
-  password: string;
-  name: string;
+export interface User {
+  id: string
+  name: string
+  email: string
+  password: string
+  role: 'admin' | 'user'
+  createdAt: string
 }
 
-const CSV_FILE_PATH = path.join(process.cwd(), 'data/users.csv')
+const USERS_CSV_PATH = path.join(process.cwd(), 'data/users.csv')
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, role } = await request.json()
+     // Validate required fields
+     if (!email || !password || !role) {
+      return NextResponse.json(
+        { error: 'Tous les champs sont requis' },
+        { status: 400 }
+      )
+    }
     
-    const fileContent = await fs.readFile(CSV_FILE_PATH, 'utf-8')
-    const records: User[] = parse(fileContent, {
+    // Read users from CSV
+    const fileContent = await fs.readFile(USERS_CSV_PATH, 'utf-8')
+    const users = parse(fileContent, {
       columns: true,
       skip_empty_lines: true
     })
 
-    const user = records.find(user => user.email === email)
+    const user = users.find((u: any) => 
+      u.email === email && u.role === role
+    )
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Utilisateur non trouvé' },
+        { status: 401 }
+      )
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password)
-    if (!passwordMatch) {
-      return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
-    }
+   // Verify password
+   const isValidPassword = await bcrypt.compare(password, user.password)
+   if (!isValidPassword) {
+     return NextResponse.json(
+       { error: 'Mot de passe incorrect' },
+       { status: 401 }
+     )
+   }
+    // Remove sensitive data before sending response
+    const { password: _, ...safeUser } = user
 
-    const { password: _, ...userWithoutPassword } = user
-    return NextResponse.json(userWithoutPassword)
+    return NextResponse.json(safeUser)
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Login error:', error)
+    return NextResponse.json(
+      { error: 'Une erreur est survenue' },
+      { status: 500 }
+    )
   }
 }

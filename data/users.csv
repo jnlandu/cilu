@@ -1,5 +1,6 @@
 id,name,email,password,role,createdAt
-243faba2-27bd-486b-a518-10fa11f23241,Mayala,jnlandu00@gmail.com,$2b$10$U9pmjSJHl3ljWhGwFBD/0eBNLq.j2PwupB4Pk/CglizYHMhPvLScy,user,2025-02-24T14:31:28.805Z
+243faba2-27bd-486b-a518-10fa11f23241,Mayala,jnlandu00@gmail.com,$2b$10$U9pmjSJHl3ljWhGwFBD/0eBNLq.j2PwupB4Pk/CglizYHMhPvLScy,admin,2025-02-24T14:31:28.805Z
 fd0a0d91-dc58-4459-856b-2a2de8dc295f,Mabiala,mayala@gmail.com,$2b$10$4PWsm.mASlEmFGr4tIYWsuugTB5PVc24TTHzcwCP2MCGXFxG0W45m,user,2025-02-24T14:40:43.302Z
 f97c02cb-8927-4c7b-905d-437d6af7ecf4,dieu,dieu@gmail.com,$2b$10$mygmnkd15pFFCIdGlstpfuBjx0DBwMyglbL.WcBmCoojCoMNyj/tG,user,2025-02-24T14:42:16.700Z
 175efb9f-19da-4a29-b647-0c4dde287503,jerry nuland,nlandu@gmail.com,$2b$10$FyQ80C8.meEyFCt8h9qZ7u.uQ9uMr9vRQmdodUrs6OUvBCZTbKrVO,user,2025-02-24T14:46:36.945Z
+b315e563-be9b-4e53-9603-00b743341726,Mambu,mabi@example.com,$2b$10$gDPyZGF2WC2pdKN.tSNh/e45b5F8O5j3N3pMzhgnreTU2WN8TUZ7a,user,2025-03-03T23:02:29.728Z

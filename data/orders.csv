@@ -1,3 +1,3 @@
-id,userId,product,quantity,status,date
-1,243faba2-27bd-486b-a518-10fa11f23241,CEM II/B-LL 42.5 R,100,delivered,2024-02-24
-2,243faba2-27bd-486b-a518-10fa11f23241,CEM II/B-LL 32.5 R,50,pending,2024-02-23
+id,userId,product,quantity,amount,status,date
+1,243faba2-27bd-486b-a518-10fa11f23241,CEM II/B-LL 42.5 R,100,500,delivered,2024-02-24
+2,243faba2-27bd-486b-a518-10fa11f23241,CEM II/B-LL 32.5 R,50,20,pending,2024-02-23

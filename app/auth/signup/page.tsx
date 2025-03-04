@@ -32,7 +32,12 @@ const signupSchema = z.object({
   name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Email invalide"),
   password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
-  confirmPassword: z.string()
+  confirmPassword: z.string(),
+  street: z.string().min(5, "L'adresse doit contenir au moins 5 caractères"),
+  city: z.string().min(2, "La ville doit contenir au moins 2 caractères"),
+  province: z.string().min(2, "La province doit contenir au moins 2 caractères"),
+  depot: z.string().min(2, "Le nom du dépôt est requis"),
+  phone: z.string().min(10, "Le numéro de téléphone doit contenir au moins 10 chiffres"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -55,6 +60,11 @@ export default function SignupPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      street: "",
+      city: "",
+      province: "",
+      depot: "",
+      phone: "",
     },
   })
 
@@ -146,6 +156,92 @@ export default function SignupPage() {
                           {...field}
                           type="email"
                           placeholder="mayala@example.com"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Adresse</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="123 Avenue Example"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="tel"
+                            placeholder="+243 XX XXX XXXX"
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ville</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Kinshasa"
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="province"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Province</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Kinshasa"
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                  control={form.control}
+                  name="depot"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom du dépôt</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Nom du dépôt le plus proche"
                           disabled={isLoading}
                         />
                       </FormControl>

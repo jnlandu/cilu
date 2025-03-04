@@ -3,6 +3,7 @@
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from 'next/navigation'
+import { Toaster } from "@/components/ui/toaster"
 
 export default function DashboardLayout({
   children,
@@ -29,6 +30,7 @@ export default function DashboardLayout({
         </div>
       </nav>
       {children}
+      <Toaster />
     </div>
   )
 }

@@ -139,7 +139,7 @@ export default function OrderPage({params }: PageProps) {
               <Input
                 id="quantity"
                 type="number"
-                min="1"
+                min="20"
                 value={formData.quantity}
                 onChange={(e) => 
                   setFormData(prev => ({ ...prev, quantity: e.target.value }))
