@@ -3,7 +3,7 @@ import React from 'react'
 
 export default function Footer (){
   return (
-    <div>
+    <div className='px-8'>
         <footer className="border-t py-6">
         <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-gray-500">CiluMarket © 2024. Tous droits réservés.</p>
