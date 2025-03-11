@@ -66,7 +66,7 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginValues) {
     setIsLoading(true)
-
+  
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -75,30 +75,31 @@ export default function LoginPage() {
         },
         body: JSON.stringify(data),
       })
-
+  
+      const responseData = await response.json();
+  
       if (response.ok) {
-        const user = await response.json()
         toast({
           variant: "default",
           description: "Connexion réussie!"
         })
         // Route based on role
-        if (user.role === 'admin') {
-          router.push(`/dashboard/admin/${user.id}`)
+        if (responseData.role === 'admin') {
+          router.push(`/dashboard/admin/${responseData.id}`)
         } else {
-          router.push(`/dashboard/users/${user.id}`)
+          router.push(`/dashboard/users/${responseData.id}`)
         }
       } else {
-        const error = await response.json()
         toast({
           variant: "destructive",
-          description: error.error || "Email ou mot de passe incorrect"
+          description: responseData.error || "Email ou mot de passe incorrect"
         })
       }
     } catch (error) {
+      // This is for network errors, not API response errors
       toast({
         variant: "destructive",
-        description: "Une erreur est survenue"
+        description: "Une erreur de connexion est survenue"
       })
     } finally {
       setIsLoading(false)
