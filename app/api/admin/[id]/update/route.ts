@@ -1,10 +1,42 @@
-import { promises as fs } from 'fs'
-import { parse } from 'csv-parse/sync'
-import { stringify } from 'csv-stringify/sync'
-import path from 'path'
-import { NextRequest, NextResponse } from 'next/server'
+import { list, put } from '@vercel/blob';
+import { NextRequest, NextResponse } from 'next/server';
 
-const USERS_CSV_PATH = path.join(process.cwd(), 'data/users.csv')
+// Blob storage file name
+const USERS_BLOB_NAME = 'users-data.json';
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+
+// Helper function to get blob data
+async function getBlobData(blobName: string) {
+  try {
+    // Get the list of blobs
+    const { blobs } = await list({ token: BLOB_TOKEN });
+    
+    // Find the specific blob
+    const blob = blobs.find(b => b.pathname === blobName);
+    
+    if (!blob) {
+      return null;
+    }
+    
+    // Fetch the data
+    const response = await fetch(blob.url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blob: ${response.status}`);
+    }
+    
+    const text = await response.text();
+    
+    if (!text || !text.trim()) {
+      return null;
+    }
+    
+    return JSON.parse(text);
+  } catch (error) {
+    console.error(`Error fetching blob ${blobName}:`, error);
+    throw error;
+  }
+}
 
 interface UpdateUserBody {
   name?: string
@@ -22,26 +54,41 @@ export async function PATCH(
 ) {
   try {
     // Verify that the requester is an admin
-    const adminId = params.id
-    const usersContent = await fs.readFile(USERS_CSV_PATH, 'utf-8')
-    const users = parse(usersContent, {
-      columns: true,
-      skip_empty_lines: true
-    })
+    const adminId = params.id;
+    const userId = params.userId;
     
-    const admin = users.find((a: any) => a.id === adminId && a.role === 'admin')
+    // Get users data from blob storage
+    const users = await getBlobData(USERS_BLOB_NAME);
+    
+    if (!users) {
+      return NextResponse.json(
+        { error: 'Users data not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Find the admin in the users array
+    const admin = users.find((a: any) => a.id === adminId && a.role === 'admin');
+    
     if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // Find the user to update
-    const userIndex = users.findIndex((u: any) => u.id === params.userId)
+    const userIndex = users.findIndex((u: any) => u.id === userId);
+    
     if (userIndex === -1) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
     // Update user data
-    const body: UpdateUserBody = await request.json()
+    const body: UpdateUserBody = await request.json();
     const updatedUser = {
       ...users[userIndex],
       ...(body.name && { name: body.name }),
@@ -51,23 +98,27 @@ export async function PATCH(
       ...(body.city && { city: body.city }),
       ...(body.province && { province: body.province }),
       ...(body.depot && { depot: body.depot }),
-    }
+    };
     
-    users[userIndex] = updatedUser
+    users[userIndex] = updatedUser;
 
-    // Write updated users back to file
-    const csv = stringify(users, { header: true })
-    await fs.writeFile(USERS_CSV_PATH, csv)
+    // Write updated users back to blob storage
+    await put(USERS_BLOB_NAME, JSON.stringify(users), {
+      access: 'public',  // Using private for security
+      contentType: 'application/json',
+      token: BLOB_TOKEN
+    });
 
     // Return the updated user without sensitive info
-    const { password, ...userWithoutPassword } = updatedUser
+    const { password, ...userWithoutPassword } = updatedUser;
 
-    return NextResponse.json({ user: userWithoutPassword })
+    return NextResponse.json({ user: userWithoutPassword });
+    
   } catch (error) {
-    console.error('Error updating user:', error)
+    console.error('Error updating user:', error);
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }
-    )
+    );
   }
 }
