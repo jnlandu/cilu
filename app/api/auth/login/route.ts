@@ -17,7 +17,7 @@ export interface User {
 }
 
 // The known URL of your users blob
-const USERS_BLOB_URL = 'users-data.json' //|| "https://ilvvl3kxldn9bxrb.public.blob.vercel-storage.com/users-data-GVCipkQI2tJyU7lajCAhyDXIlDiNf6.json"
+const USERS_BLOB_URL =  "https://ilvvl3kxldn9bxrb.public.blob.vercel-storage.com/users-data-GVCipkQI2tJyU7lajCAhyDXIlDiNf6.json"
 
 
 // Also keep the blob name and token for future operations
