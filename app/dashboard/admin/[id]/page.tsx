@@ -126,6 +126,21 @@ export default function AdminDashboard({ params }: { params: { id: string } }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [userOrders, setUserOrders] = useState<Order[]>([])
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
+  
+
+
+  const resetUserForm = () => {
+    form.reset({
+      name: "",
+      email: "",
+      phone: "",
+      street: "",
+      city: "",
+      province: "",
+      depot: "",
+    });
+  };
 
 
   const form = useForm<z.infer<typeof userEditSchema>>({
@@ -300,6 +315,43 @@ const onSubmit = async (values: z.infer<typeof userEditSchema>) => {
   }
 }
 
+const createNewUser = async (values: z.infer<typeof userEditSchema>) => {
+  setIsUpdating(true);
+  try {
+    const response = await fetch(`/api/admin/${params.id}/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...values,
+        password: "password123" // Default password - user will be prompted to change
+      }),
+    });
+
+    if (!response.ok) throw new Error('Failed to create user');
+
+    const { user: newUser } = await response.json();
+    
+    // Add the new user to the list
+    setUsers([...users, newUser]);
+    
+    setIsCreateUserDialogOpen(false);
+    toast({
+      title: "Succès",
+      description: "Nouveau client créé avec succès"
+    });
+  } catch (error) {
+    toast({
+      variant: "destructive",
+      title: "Erreur",
+      description: "Impossible de créer le client"
+    });
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="container mx-auto px-4 py-8">
@@ -447,18 +499,30 @@ const onSubmit = async (values: z.infer<typeof userEditSchema>) => {
 
           <TabsContent value="users">
             <Card>
-              <CardHeader>
+            <CardHeader>
+              <div className="flex justify-between items-center">
                 <CardTitle>Liste des Utilisateurs</CardTitle>
-                <div className="relative mt-2">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher un utilisateur..."
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </CardHeader>
+                <Button 
+                  onClick={() => {
+                    resetUserForm();
+                    setIsCreateUserDialogOpen(true);
+                  }}
+                  size="sm"
+                >
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  Ajouter un utilisateur
+                </Button>
+              </div>
+              <div className="relative mt-2">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un utilisateur..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
@@ -763,6 +827,170 @@ const onSubmit = async (values: z.infer<typeof userEditSchema>) => {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Create New User Dialog */}
+<Dialog open={isCreateUserDialogOpen} onOpenChange={setIsCreateUserDialogOpen}>
+  <DialogContent className="sm:max-w-[525px]">
+    <DialogHeader>
+      <DialogTitle>Créer un nouveau client</DialogTitle>
+      <DialogDescription>
+        Entrez les informations du nouveau client
+      </DialogDescription>
+    </DialogHeader>
+    
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(createNewUser)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Nom complet" 
+                  {...field} 
+                  disabled={isUpdating}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input 
+                  type="email"
+                  placeholder="example@mail.com" 
+                  {...field} 
+                  disabled={isUpdating}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Téléphone</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="+243 XX XXX XXXX" 
+                  {...field} 
+                  disabled={isUpdating}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="street"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Adresse</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Adresse complète" 
+                  {...field} 
+                  disabled={isUpdating}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ville</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Ville" 
+                    {...field} 
+                    disabled={isUpdating}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="province"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Province</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Province" 
+                    {...field} 
+                    disabled={isUpdating}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="depot"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Dépôt</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Nom du dépôt" 
+                  {...field} 
+                  disabled={isUpdating}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="pt-2 text-sm text-gray-500 italic">
+          <p>Note: Le mot de passe par défaut sera "password123"</p>
+          <p>L'utilisateur pourra le changer lors de sa première connexion</p>
+        </div>
+        
+        <div className="flex justify-end gap-4 pt-4">
+          <Button 
+            variant="outline" 
+            type="button" 
+            onClick={() => setIsCreateUserDialogOpen(false)}
+            disabled={isUpdating}
+          >
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isUpdating}>
+            {isUpdating ? "Création..." : "Créer utilisateur"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  </DialogContent>
+</Dialog>
     </div>
   )
 }
