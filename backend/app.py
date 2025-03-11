@@ -30,10 +30,8 @@ app = FastAPI()
 origins = [
     # "https://mlops-project-3repcia0n-jeremies-projects-257f201c.vercel.app", 
     # "https://mlops-project-taupe.vercel.app/",# for production
-    'https://cridupn.vercel.app',
-    'https://cilu.vercel.app/'
-    'https://cridupn-git-main-jeremies-projects-257f201c.vercel.app',
-    'https://cridupn-ciloc3p51-jeremies-projects-257f201c.vercel.app',
+    'https://cilu.vercel.app',
+    'https://cilu.vercel.app/',
     "http://localhost:3000", # for local development
 ]
 app.add_middleware(
