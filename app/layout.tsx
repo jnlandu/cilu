@@ -6,9 +6,9 @@ import { Header } from '@/components/header'
 import Footer from '@/components/footer'
 
 export const metadata: Metadata = {
-  title: 'CILU - Centre d\'Intervention Logistique Urbaine',
-  description: 'Plateforme de gestion logistique urbaine pour améliorer l\'approvisionnement en eau à Kinshasa',
-  keywords: 'logistique urbaine, livraison d\'eau, Kinshasa, approvisionnement en eau, CILU',
+  title: 'CILU - Cimenterie de Lukala',
+  description: 'Plateforme de commande en ligne de ciment CILU',
+  keywords: 'CILU, Cimenterie de Lukala, Ciment, Congo, RDC',
   authors: [{ name: 'CILU Team' }],
   viewport: 'width=device-width, initial-scale=1',
 }
