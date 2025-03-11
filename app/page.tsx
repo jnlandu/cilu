@@ -10,7 +10,6 @@ import { HeroSection } from "@/components/hero"
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col p-8">
-      <Header />
       <main className="flex-1">
         <HeroSection />
         {/* About Section */}
@@ -160,22 +159,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-6">
-        <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-gray-500">CiluMarket © 2024. Tous droits réservés.</p>
-          <nav className="flex gap-4">
-            <Link href="#" className="text-sm text-gray-500 hover:text-gray-900">
-              Condition d'utilisation
-            </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:text-gray-900">
-              Contrat des prestations
-            </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:text-gray-900">
-              Contrat des distributeurs
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      
     </div>
   )
 }
