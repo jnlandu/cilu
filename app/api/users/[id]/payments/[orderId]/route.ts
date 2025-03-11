@@ -1,35 +1,89 @@
-import { promises as fs } from 'fs'
-import { parse } from 'csv-parse/sync'
-import { stringify } from 'csv-stringify/sync'
-import path from 'path'
-import { NextResponse } from 'next/server'
+import { list, put } from '@vercel/blob';
+import { NextResponse } from 'next/server';
 
-const PAYMENTS_CSV_PATH = path.join(process.cwd(), 'data/payments.csv')
-const ORDERS_CSV_PATH = path.join(process.cwd(), 'data/orders.csv')
+// Blob storage file names
+const PAYMENTS_BLOB_NAME = 'payments-data.json';
+const ORDERS_BLOB_NAME = 'orders-data.json';
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+
+// Helper function to get blob data
+async function getBlobData(blobName: string) {
+  try {
+    // Get the list of blobs
+    const { blobs } = await list({ token: BLOB_TOKEN });
+    
+    // Find the specific blob
+    const blob = blobs.find(b => b.pathname === blobName);
+    
+    if (!blob) {
+      return null;
+    }
+    
+    // Fetch the data
+    const response = await fetch(blob.url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blob: ${response.status}`);
+    }
+    
+    const text = await response.text();
+    
+    if (!text || !text.trim()) {
+      return null;
+    }
+    
+    return JSON.parse(text);
+  } catch (error) {
+    console.error(`Error fetching blob ${blobName}:`, error);
+    throw error;
+  }
+}
+
+// Helper function to save data to a blob
+async function saveBlobData(blobName: string, data: any) {
+  try {
+    await put(blobName, JSON.stringify(data), {
+      access: 'public',
+      contentType: 'application/json',
+      token: BLOB_TOKEN
+    });
+  } catch (error) {
+    console.error(`Error saving blob ${blobName}:`, error);
+    throw error;
+  }
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string; orderId: string } }
 ) {
   try {
-    const fileContent = await fs.readFile(PAYMENTS_CSV_PATH, 'utf-8')
-    const payments = parse(fileContent, {
-      columns: true,
-      skip_empty_lines: true
-    })
-
-    const payment = payments.find((p: any) => p.orderId === params.orderId)
+    // Get payments data from blob
+    const payments = await getBlobData(PAYMENTS_BLOB_NAME);
+    
+    if (!payments) {
+      return NextResponse.json({ payment: null }, { status: 404 });
+    }
+    
+    // Find the payment for this order
+    const payment = payments.find((p: any) => p.orderId === params.orderId);
     
     if (!payment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
     }
-
-    return NextResponse.json({ payment })
+    
+    // Verify that the payment belongs to the user
+    if (payment.userId !== params.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+    
+    return NextResponse.json({ payment });
   } catch (error) {
+    console.error('Error fetching payment:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -38,98 +92,151 @@ export async function POST(
   { params }: { params: { id: string; orderId: string } }
 ) {
   try {
-    const body = await request.json()
-
-    // Ensure payments CSV exists with ALL necessary columns
-    try {
-      await fs.access(PAYMENTS_CSV_PATH)
-    } catch {
-      await fs.writeFile(
-        PAYMENTS_CSV_PATH,
-        'id,orderId,userId,amount,paymentMethod,accountDetails,status,createdAt,reference,orderNumber\n'
-      )
-    }
-
-    // Read existing payments
-    const fileContent = await fs.readFile(PAYMENTS_CSV_PATH, 'utf-8')
-    let payments = []
+    const body = await request.json();
     
-    try {
-      payments = parse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        relax_column_count: true // Add this to be more tolerant of column mismatches
-      })
-    } catch (error) {
-      console.error('Error parsing CSV file:', error)
-      // If parsing fails, start with empty payments array
-      payments = []
+    // Validate required fields
+    if (!body.amount || !body.paymentMethod) {
+      return NextResponse.json(
+        { error: 'Missing required payment fields' },
+        { status: 400 }
+      );
     }
-
+    
+    // Get existing payments
+    let payments = await getBlobData(PAYMENTS_BLOB_NAME) || [];
+    
+    // Create new payment object
     const payment = {
       id: params.orderId,
       orderId: params.orderId,
       userId: params.id,
-      amount: body.amount,
+      amount: parseFloat(body.amount) || 0,
       paymentMethod: body.paymentMethod,
-      accountDetails: JSON.stringify(body.accountDetails),
-      status: body.status,
+      accountDetails: body.accountDetails || {},
+      status: body.status || 'pending',
       createdAt: new Date().toISOString(),
-      reference: body.reference || '',  // Ensure these fields are never undefined
-      orderNumber: body.orderNumber || ''
-    }
-
-    // Check if payment already exists and update it, or add new one
-    const existingIndex = payments.findIndex((p: any) => p.orderId === params.orderId)
+      reference: body.reference || '',
+      orderNumber: body.orderNumber || params.orderId.substring(0, 8)
+    };
+    
+    // Check if payment already exists and update it, or add a new one
+    const existingIndex = payments.findIndex((p: any) => p.orderId === params.orderId);
     if (existingIndex >= 0) {
-      payments[existingIndex] = payment
+      payments[existingIndex] = payment;
     } else {
-      payments.push(payment)
+      payments.push(payment);
     }
-
-    // Write updated payments to CSV with explicitly defined columns to ensure consistency
-    const columns = [
-      'id', 'orderId', 'userId', 'amount', 'paymentMethod', 
-      'accountDetails', 'status', 'createdAt', 'reference', 'orderNumber'
-    ]
     
-    const csv = stringify(payments, { 
-      header: true,
-      columns: columns
-    })
+    // Save updated payments to blob
+    await saveBlobData(PAYMENTS_BLOB_NAME, payments);
     
-    await fs.writeFile(PAYMENTS_CSV_PATH, csv)
-
     // Update order status
     try {
-      const ordersContent = await fs.readFile(ORDERS_CSV_PATH, 'utf-8')
-      const orders = parse(ordersContent, {
-        columns: true,
-        skip_empty_lines: true
-      })
-
-      const updatedOrders = orders.map((order: any) => {
-        if (order.id === params.orderId) {
-          return { ...order, status: body.status === 'payé' ? 'processing' : 'pending' }
-        }
-        return order
-      })
-
-      await fs.writeFile(
-        ORDERS_CSV_PATH,
-        stringify(updatedOrders, { header: true })
-      )
+      const orders = await getBlobData(ORDERS_BLOB_NAME);
+      
+      if (orders) {
+        const updatedOrders = orders.map((order: any) => {
+          if (order.id === params.orderId) {
+            return { 
+              ...order, 
+              status: body.status === 'payé' ? 'processing' : 'pending' 
+            };
+          }
+          return order;
+        });
+        
+        // Save updated orders
+        await saveBlobData(ORDERS_BLOB_NAME, updatedOrders);
+      }
     } catch (orderError) {
-      console.error('Error updating order status:', orderError)
+      console.error('Error updating order status:', orderError);
       // Continue execution even if order update fails
     }
-
-    return NextResponse.json({ payment })
+    
+    return NextResponse.json({ payment });
   } catch (error) {
-    console.error('Error processing payment:', error)
+    console.error('Error processing payment:', error);
     return NextResponse.json(
       { error: 'Failed to process payment' },
       { status: 500 }
-    )
+    );
+  }
+}
+
+// Add update payment status endpoint
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string; orderId: string } }
+) {
+  try {
+    const { status, reference } = await request.json();
+    
+    if (!status) {
+      return NextResponse.json(
+        { error: 'Status is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Get payments data
+    const payments = await getBlobData(PAYMENTS_BLOB_NAME);
+    
+    if (!payments) {
+      return NextResponse.json(
+        { error: 'Payment not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Find payment
+    const paymentIndex = payments.findIndex((p: any) => 
+      p.orderId === params.orderId && p.userId === params.id
+    );
+    
+    if (paymentIndex === -1) {
+      return NextResponse.json(
+        { error: 'Payment not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+    
+    // Update payment
+    payments[paymentIndex] = {
+      ...payments[paymentIndex],
+      status,
+      reference: reference || payments[paymentIndex].reference,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Save updated payments
+    await saveBlobData(PAYMENTS_BLOB_NAME, payments);
+    
+    // Update order status if payment is successful
+    if (status === 'payé' || status === 'success' || status === 'completed') {
+      try {
+        const orders = await getBlobData(ORDERS_BLOB_NAME);
+        
+        if (orders) {
+          const updatedOrders = orders.map((order: any) => {
+            if (order.id === params.orderId) {
+              return { ...order, status: 'processing' };
+            }
+            return order;
+          });
+          
+          await saveBlobData(ORDERS_BLOB_NAME, updatedOrders);
+        }
+      } catch (orderError) {
+        console.error('Error updating order status:', orderError);
+      }
+    }
+    
+    return NextResponse.json({ payment: payments[paymentIndex] });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update payment status' },
+      { status: 500 }
+    );
   }
 }
