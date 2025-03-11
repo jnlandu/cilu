@@ -41,7 +41,7 @@ export default function OrderPage({params }: PageProps) {
         id: orderId,
         product: formData.product,
         quantity: parseInt(formData.quantity),
-        amount: formData.product === "cem-42-5" ? 15000 * parseInt(formData.quantity) : 12000 * parseInt(formData.quantity)
+        amount: formData.product === "cem-42-5" ? 10 * parseInt(formData.quantity) : 10 * parseInt(formData.quantity)
       }
 
       // Store order in session storage for payment page
